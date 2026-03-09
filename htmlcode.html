@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkillBridge — Smart Job Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070B14;
+    --surface: #0D1421;
+    --surface2: #131C2E;
+    --border: #1E2D45;
+    --accent: #00E5FF;
+    --accent2: #7B2FFF;
+    --accent3: #FF6B35;
+    --gold: #FFD166;
+    --text: #E8F0FE;
+    --muted: #6B7FA3;
+    --high: #00E676;
+    --mid: #FFD166;
+    --low: #FF5252;
+    --r: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
+  h1,h2,h3,h4 { font-family:'Syne',sans-serif; }
+
+  nav {
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 40px; height:68px;
+    background:rgba(7,11,20,0.85); backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+  }
+  .logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.4rem; letter-spacing:-0.5px; }
+  .logo span { color:var(--accent); }
+  .nav-links { display:flex; gap:8px; }
+  .nav-btn {
+    padding:8px 18px; border-radius:8px; border:none; cursor:pointer;
+    font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:500; transition:all 0.2s;
+    background:transparent; color:var(--muted);
+  }
+  .nav-btn:hover, .nav-btn.active { background:var(--surface2); color:var(--text); }
+  .nav-btn.cta { background:var(--accent); color:#000; font-weight:700; }
+  .nav-btn.cta:hover { background:#00b8d4; }
+
+  .page { display:none; padding-top:68px; min-height:100vh; }
+  .page.active { display:block; }
+
+  #home {
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,255,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 80% 80%, rgba(123,47,255,0.1) 0%, transparent 60%),
+                var(--bg);
+  }
+  .hero {
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    padding:100px 40px 60px; gap:28px;
+  }
+  .hero-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25);
+    border-radius:100px; padding:6px 16px; font-size:0.8rem; color:var(--accent);
+    font-weight:500; letter-spacing:0.5px;
+  }
+  .hero h1 { font-size:clamp(2.5rem, 6vw, 4.5rem); font-weight:800; line-height:1.1; letter-spacing:-1.5px; max-width:800px; }
+  .hero h1 em { font-style:normal; color:var(--accent); }
+  .hero p { font-size:1.1rem; color:var(--muted); max-width:540px; line-height:1.7; font-weight:300; }
+  .hero-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .btn-primary {
+    padding:14px 32px; background:var(--accent); color:#000; border:none; border-radius:10px;
+    font-family:'Syne',sans-serif; font-weight:700; font-size:0.95rem; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,229,255,0.3); }
+  .btn-secondary {
+    padding:14px 32px; background:transparent; color:var(--text); border:1px solid var(--border);
+    border-radius:10px; font-family:'Syne',sans-serif; font-weight:600; font-size:0.95rem; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+  .stats-row { display:flex; gap:0; width:100%; max-width:700px; margin-top:20px; }
+  .stat {
+    flex:1; padding:28px 20px; background:var(--surface); border:1px solid var(--border); text-align:center;
+  }
+  .stat:first-child { border-radius:var(--r) 0 0 var(--r); }
+  .stat:last-child { border-radius:0 var(--r) var(--r) 0; }
+  .stat-val { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--accent); }
+  .stat-label { font-size:0.8rem; color:var(--muted); margin-top:4px; }
+
+  .section { padding:80px 40px; max-width:1100px; margin:0 auto; }
+  .section-title { font-size:2rem; font-weight:800; margin-bottom:8px; }
+  .section-sub { color:var(--muted); margin-bottom:48px; font-size:1rem; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:20px; }
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:28px;
+    transition:all 0.25s; position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent2));
+    transform:scaleX(0); transform-origin:left; transition:transform 0.3s;
+  }
+  .card:hover::before { transform:scaleX(1); }
+  .card:hover { border-color:rgba(0,229,255,0.2); transform:translateY(-4px); }
+  .card-icon { width:48px; height:48px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:16px; }
+  .card h3 { font-size:1.05rem; margin-bottom:8px; }
+  .card p { font-size:0.88rem; color:var(--muted); line-height:1.6; }
+
+  .form-page { max-width:640px; margin:0 auto; padding:60px 40px; }
+  .form-title { font-size:1.8rem; font-weight:800; margin-bottom:6px; }
+  .form-sub { color:var(--muted); margin-bottom:36px; }
+  .form-group { margin-bottom:20px; }
+  .form-group label { display:block; font-size:0.85rem; font-weight:500; color:var(--muted); margin-bottom:8px; letter-spacing:0.3px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width:100%; padding:12px 16px; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem;
+    transition:all 0.2s; outline:none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,229,255,0.08);
+  }
+  .form-group select { appearance:none; cursor:pointer; }
+  .form-group textarea { resize:vertical; min-height:90px; }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+  .skills-input-area { display:flex; gap:8px; margin-bottom:10px; }
+  .skills-input-area input { flex:1; }
+  .skills-tags { display:flex; flex-wrap:wrap; gap:8px; }
+  .skill-tag {
+    display:inline-flex; align-items:center; gap:6px; padding:6px 12px;
+    background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25);
+    border-radius:100px; font-size:0.82rem; color:var(--accent);
+  }
+  .skill-tag button { background:none; border:none; color:var(--accent); cursor:pointer; font-size:1rem; line-height:1; padding:0; }
+
+  .submit-btn {
+    width:100%; padding:14px; background:var(--accent); color:#000; border:none;
+    border-radius:10px; font-family:'Syne',sans-serif; font-weight:700; font-size:1rem;
+    cursor:pointer; margin-top:8px; transition:all 0.2s;
+  }
+  .submit-btn:hover { background:#00b8d4; transform:translateY(-1px); }
+  .submit-btn.purple { background:var(--accent2); color:#fff; }
+  .submit-btn.purple:hover { background:#6420e0; }
+
+  .role-select { display:flex; gap:16px; margin-bottom:28px; }
+  .role-card {
+    flex:1; padding:20px; border:2px solid var(--border); border-radius:var(--r);
+    cursor:pointer; text-align:center; transition:all 0.2s;
+  }
+  .role-card:hover { border-color:rgba(0,229,255,0.4); }
+  .role-card.selected { border-color:var(--accent); background:rgba(0,229,255,0.06); }
+  .role-card .role-icon { font-size:2rem; margin-bottom:8px; }
+  .role-card h4 { font-size:0.95rem; }
+  .role-card p { font-size:0.78rem; color:var(--muted); margin-top:4px; }
+
+  .search-bar {
+    display:flex; gap:12px; background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:12px 16px; margin-bottom:28px; align-items:center;
+  }
+  .search-bar input {
+    flex:1; background:none; border:none; color:var(--text); font-family:'DM Sans',sans-serif;
+    font-size:1rem; outline:none;
+  }
+  .search-bar input::placeholder { color:var(--muted); }
+  .search-bar button {
+    padding:10px 24px; background:var(--accent); color:#000; border:none; border-radius:8px;
+    font-family:'Syne',sans-serif; font-weight:700; cursor:pointer;
+  }
+  .job-list { display:flex; flex-direction:column; gap:16px; }
+  .job-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+    padding:24px; display:flex; align-items:flex-start; gap:16px; cursor:pointer;
+    transition:all 0.2s;
+  }
+  .job-card:hover { border-color:rgba(0,229,255,0.3); transform:translateX(4px); }
+  .company-logo {
+    width:52px; height:52px; border-radius:10px; background:var(--surface2);
+    display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;
+  }
+  .job-info { flex:1; }
+  .job-title { font-family:'Syne',sans-serif; font-weight:700; font-size:1.05rem; }
+  .job-meta { color:var(--muted); font-size:0.85rem; margin:4px 0 12px; }
+  .job-skills { display:flex; flex-wrap:wrap; gap:6px; }
+  .job-skill-tag {
+    padding:4px 10px; border-radius:100px; font-size:0.75rem;
+    background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+  }
+  .match-badge {
+    padding:6px 14px; border-radius:100px; font-family:'Syne',sans-serif; font-weight:700;
+    font-size:0.82rem; white-space:nowrap;
+  }
+  .match-high { background:rgba(0,230,118,0.15); color:var(--high); border:1px solid rgba(0,230,118,0.3); }
+  .match-mid { background:rgba(255,209,102,0.12); color:var(--mid); border:1px solid rgba(255,209,102,0.3); }
+  .match-low { background:rgba(255,82,82,0.12); color:var(--low); border:1px solid rgba(255,82,82,0.3); }
+
+  .analysis-panel {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+    padding:36px; margin-top:28px;
+  }
+  .analysis-header { display:flex; align-items:center; gap:16px; margin-bottom:28px; }
+  .score-ring {
+    width:100px; height:100px; flex-shrink:0; position:relative;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .score-ring svg { position:absolute; top:0; left:0; transform:rotate(-90deg); }
+  .score-num { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; z-index:1; }
+  .chance-label { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; }
+  .chance-label.high { color:var(--high); }
+  .chance-label.mid { color:var(--mid); }
+  .chance-label.low { color:var(--low); }
+  .skill-breakdown { margin-top:20px; }
+  .skill-row { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .skill-row-label { width:140px; font-size:0.85rem; color:var(--muted); flex-shrink:0; }
+  .skill-bar { flex:1; height:8px; background:var(--surface2); border-radius:100px; overflow:hidden; }
+  .skill-bar-fill { height:100%; border-radius:100px; transition:width 0.8s ease; }
+  .skill-row-pct { width:40px; text-align:right; font-size:0.82rem; font-weight:600; font-family:'Syne',sans-serif; }
+  .gap-suggestions { margin-top:24px; }
+  .gap-item {
+    display:flex; align-items:center; gap:10px; padding:12px 16px;
+    background:rgba(255,107,53,0.07); border:1px solid rgba(255,107,53,0.2);
+    border-radius:8px; margin-bottom:8px; font-size:0.88rem;
+  }
+  .gap-item span { color:var(--accent3); }
+
+  .recruiter-grid { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .posted-jobs { display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+  .posted-job {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:18px 20px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .posted-job-title { font-family:'Syne',sans-serif; font-weight:700; }
+  .posted-job-meta { font-size:0.82rem; color:var(--muted); margin-top:3px; }
+  .applicants-btn {
+    padding:7px 16px; background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25);
+    border-radius:8px; color:var(--accent); font-size:0.82rem; font-weight:600; cursor:pointer; border:none;
+    font-family:'DM Sans',sans-serif;
+  }
+
+  .candidates-table { width:100%; border-collapse:collapse; margin-top:16px; }
+  .candidates-table th {
+    text-align:left; padding:10px 14px; font-size:0.78rem; color:var(--muted);
+    text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid var(--border);
+  }
+  .candidates-table td { padding:14px; border-bottom:1px solid rgba(30,45,69,0.5); font-size:0.88rem; }
+  .candidates-table tr:hover td { background:rgba(0,229,255,0.03); }
+  .shortlist-btn {
+    padding:5px 14px; background:transparent; border:1px solid var(--border); border-radius:6px;
+    color:var(--muted); font-size:0.78rem; cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif;
+  }
+  .shortlist-btn:hover, .shortlist-btn.active { background:rgba(0,230,118,0.1); border-color:var(--high); color:var(--high); }
+
+  .admin-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:36px; }
+  .admin-stat {
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--r);
+    padding:20px 24px;
+  }
+  .admin-stat-val { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; }
+  .admin-stat-label { font-size:0.82rem; color:var(--muted); margin-top:4px; }
+  .admin-stat-val.cyan { color:var(--accent); }
+  .admin-stat-val.purple { color:var(--accent2); }
+  .admin-stat-val.gold { color:var(--gold); }
+  .admin-stat-val.green { color:var(--high); }
+  .admin-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .admin-tab {
+    padding:9px 20px; border-radius:8px; border:1px solid var(--border); background:transparent;
+    color:var(--muted); font-family:'DM Sans',sans-serif; font-size:0.88rem; cursor:pointer; transition:all 0.2s;
+  }
+  .admin-tab.active { background:var(--surface2); color:var(--text); border-color:rgba(0,229,255,0.3); }
+  .users-table { width:100%; border-collapse:collapse; }
+  .users-table th {
+    text-align:left; padding:10px 14px; font-size:0.78rem; color:var(--muted);
+    text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid var(--border);
+  }
+  .users-table td { padding:14px; border-bottom:1px solid rgba(30,45,69,0.5); font-size:0.88rem; }
+  .status-pill {
+    display:inline-block; padding:3px 10px; border-radius:100px; font-size:0.75rem; font-weight:600;
+  }
+  .status-active { background:rgba(0,230,118,0.1); color:var(--high); }
+  .status-pending { background:rgba(255,209,102,0.1); color:var(--mid); }
+  .status-blocked { background:rgba(255,82,82,0.1); color:var(--low); }
+  .action-btns { display:flex; gap:6px; }
+  .act-btn {
+    padding:4px 10px; border-radius:5px; font-size:0.75rem; cursor:pointer; border:none; font-family:'DM Sans',sans-serif;
+  }
+  .act-approve { background:rgba(0,230,118,0.15); color:var(--high); }
+  .act-block { background:rgba(255,82,82,0.12); color:var(--low); }
+  .act-delete { background:rgba(255,82,82,0.08); color:var(--low); }
+
+  .toast {
+    position:fixed; bottom:30px; right:30px; z-index:999;
+    background:var(--surface2); border:1px solid var(--high); border-radius:10px;
+    padding:14px 20px; display:flex; align-items:center; gap:10px; font-size:0.9rem;
+    box-shadow:0 8px 30px rgba(0,0,0,0.4); transform:translateY(80px); opacity:0;
+    transition:all 0.3s; pointer-events:none;
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast .toast-icon { color:var(--high); font-size:1.2rem; }
+
+  .divider { border:none; border-top:1px solid var(--border); margin:32px 0; }
+  .section-heading { font-family:'Syne',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:16px; }
+  .text-accent { color:var(--accent); }
+  .text-muted { color:var(--muted); font-size:0.85rem; }
+
+  .profile-bar { background:var(--surface2); border-radius:100px; height:8px; margin:8px 0 4px; }
+  .profile-bar-fill { height:8px; border-radius:100px; background:linear-gradient(90deg, var(--accent), var(--accent2)); width:0; transition:width 1s ease; }
+
+  @media(max-width:700px) {
+    nav { padding:0 20px; }
+    .hero { padding:80px 20px 40px; }
+    .section { padding:60px 20px; }
+    .form-page { padding:40px 20px; }
+    .recruiter-grid { grid-template-columns:1fr; }
+    .admin-grid { grid-template-columns:1fr 1fr; }
+    .form-row { grid-template-columns:1fr; }
+    .role-select { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Skill<span>Bridge</span></div>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showPage('home')">Home</button>
+    <button class="nav-btn" onclick="showPage('register')">Register</button>
+    <button class="nav-btn" onclick="showPage('seeker')">Job Seeker</button>
+    <button class="nav-btn" onclick="showPage('recruiter')">Recruiter</button>
+    <button class="nav-btn" onclick="showPage('admin')">Admin</button>
+  </div>
+</nav>
+
+<div class="toast" id="toast">
+  <span class="toast-icon">✓</span>
+  <span id="toastMsg">Action completed!</span>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="home">
+  <div class="hero">
+    <div class="hero-badge">⚡ AI-Powered Skill Matching</div>
+    <h1>The Smart Portal That Matches <em>Skills</em>, Not Just Resumes</h1>
+    <p>SkillBridge analyzes your skills against job requirements, shows you your exact match percentage, and guides you to close the gap.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="showPage('register')">Get Started Free</button>
+      <button class="btn-secondary" onclick="showPage('seeker')">Browse Jobs</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-val">12,400+</div><div class="stat-label">Active Jobs</div></div>
+      <div class="stat"><div class="stat-val">98K+</div><div class="stat-label">Job Seekers</div></div>
+      <div class="stat"><div class="stat-val">3,200+</div><div class="stat-label">Companies</div></div>
+      <div class="stat"><div class="stat-val">87%</div><div class="stat-label">Match Accuracy</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">How SkillBridge Works</div>
+    <div class="section-sub">Four simple steps from profile to placement</div>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon" style="background:rgba(0,229,255,0.1);">👤</div>
+        <h3>1. Build Your Profile</h3>
+        <p>Add your skills, education, and experience. Our system maps your technical and soft skill inventory instantly.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(123,47,255,0.1);">🔍</div>
+        <h3>2. Search Jobs</h3>
+        <p>Browse curated job listings filtered by your skill set. Each listing shows a live match score before you apply.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(255,107,53,0.1);">📊</div>
+        <h3>3. See Your Match</h3>
+        <p>Get an instant skill match percentage — High (70%+), Medium (40–70%), or Low (&lt;40%) — so you know where you stand.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:rgba(255,209,102,0.1);">🚀</div>
+        <h3>4. Close the Gap</h3>
+        <p>See exactly which skills you're missing and get curated learning suggestions to boost your match score.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="padding-top:0">
+    <div class="section-title">Opportunity Analysis Logic</div>
+    <div class="section-sub">How we calculate your chance of success</div>
+    <div class="cards" style="grid-template-columns:repeat(3,1fr)">
+      <div class="card" style="border-color:rgba(0,230,118,0.25)">
+        <div style="font-size:2.5rem;font-family:'Syne',sans-serif;font-weight:800;color:var(--high)">70%+</div>
+        <h3 style="color:var(--high);margin-top:8px">🟢 High Chance</h3>
+        <p>Your skill set strongly aligns with this role. You're a top candidate. Apply with confidence.</p>
+      </div>
+      <div class="card" style="border-color:rgba(255,209,102,0.25)">
+        <div style="font-size:2.5rem;font-family:'Syne',sans-serif;font-weight:800;color:var(--mid)">40–70%</div>
+        <h3 style="color:var(--mid);margin-top:8px">🟡 Medium Chance</h3>
+        <p>You meet many requirements. Close a few skill gaps to significantly strengthen your application.</p>
+      </div>
+      <div class="card" style="border-color:rgba(255,82,82,0.25)">
+        <div style="font-size:2.5rem;font-family:'Syne',sans-serif;font-weight:800;color:var(--low)">Below 40%</div>
+        <h3 style="color:var(--low);margin-top:8px">🔴 Low Chance</h3>
+        <p>Significant skill gaps exist. Use our gap analysis to build a targeted learning roadmap.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div class="page" id="register">
+  <div class="form-page">
+    <div class="form-title">Create Account</div>
+    <div class="form-sub">Join SkillBridge — choose your role to get started</div>
+    <div class="role-select">
+      <div class="role-card selected" id="roleSeeker" onclick="selectRole('seeker')">
+        <div class="role-icon">🎓</div>
+        <h4>Job Seeker</h4>
+        <p>Find your dream job</p>
+      </div>
+      <div class="role-card" id="roleRecruiter" onclick="selectRole('recruiter')">
+        <div class="role-icon">🏢</div>
+        <h4>Recruiter</h4>
+        <p>Find top talent</p>
+      </div>
+      <div class="role-card" id="roleAdmin" onclick="selectRole('admin')">
+        <div class="role-icon">🛡️</div>
+        <h4>Admin</h4>
+        <p>Manage the platform</p>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>First Name</label>
+        <input type="text" id="regFirst" placeholder="Arjun">
+      </div>
+      <div class="form-group">
+        <label>Last Name</label>
+        <input type="text" id="regLast" placeholder="Sharma">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="regEmail" placeholder="arjun@example.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="regPass" placeholder="Create a strong password">
+    </div>
+    <div class="form-group" id="companyField" style="display:none">
+      <label>Company Name</label>
+      <input type="text" placeholder="Infosys, TCS, Startup...">
+    </div>
+    <div class="form-group">
+      <label>Location</label>
+      <select>
+        <option>Hyderabad, Telangana</option>
+        <option>Bangalore, Karnataka</option>
+        <option>Mumbai, Maharashtra</option>
+        <option>Chennai, Tamil Nadu</option>
+        <option>Pune, Maharashtra</option>
+        <option>Delhi, NCR</option>
+      </select>
+    </div>
+    <button class="submit-btn" onclick="handleRegister()">Create Account →</button>
+    <p class="text-muted" style="text-align:center;margin-top:16px">By registering, you agree to our Terms & Privacy Policy</p>
+  </div>
+</div>
+
+<!-- JOB SEEKER -->
+<div class="page" id="seeker">
+  <div class="section" style="max-width:900px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:36px">
+      <div>
+        <div class="form-title">My Profile</div>
+        <div class="text-muted">Profile completeness</div>
+        <div class="profile-bar"><div class="profile-bar-fill" id="profileFill" style="width:72%"></div></div>
+        <div class="text-muted" style="margin-top:2px">72% — Add more skills to reach 100%</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:0.82rem;color:var(--muted)">Logged in as</div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700">Ravi Kumar</div>
+        <div style="font-size:0.82rem;color:var(--accent)">Job Seeker</div>
+      </div>
+    </div>
+
+    <div class="section-heading">My Skills</div>
+    <div class="skills-input-area">
+      <input type="text" id="skillInput" placeholder="Type a skill and press Add..." onkeypress="if(event.key==='Enter')addSkill()">
+      <button class="btn-primary" style="padding:10px 20px;white-space:nowrap" onclick="addSkill()">+ Add</button>
+    </div>
+    <div class="skills-tags" id="skillTags"></div>
+
+    <hr class="divider">
+
+    <div class="section-heading">Search Jobs</div>
+    <div class="search-bar">
+      <span style="color:var(--muted)">🔍</span>
+      <input type="text" id="jobSearch" placeholder="Search by role, skill, or company..." oninput="filterJobs()">
+      <button onclick="filterJobs()">Search</button>
+    </div>
+    <div class="job-list" id="jobList"></div>
+
+    <div class="analysis-panel" id="analysisPanel" style="display:none">
+      <div class="section-heading">📊 Opportunity Analysis</div>
+      <div class="analysis-header">
+        <div class="score-ring">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="10"
+              stroke-dasharray="264" stroke-dashoffset="264" id="scoreCircle" stroke-linecap="round"/>
+          </svg>
+          <div class="score-num" id="scoreNum">0%</div>
+        </div>
+        <div>
+          <div class="chance-label" id="chanceLabel">—</div>
+          <div style="color:var(--muted);font-size:0.9rem;margin-top:6px" id="chanceDesc">Select a job to analyze</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-top:8px" id="jobBeingAnalyzed"></div>
+        </div>
+      </div>
+      <div class="skill-breakdown" id="skillBreakdown"></div>
+      <div class="gap-suggestions" id="gapSuggestions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECRUITER -->
+<div class="page" id="recruiter">
+  <div class="section" style="max-width:960px">
+    <div class="form-title">Recruiter Dashboard</div>
+    <div class="form-sub" style="margin-bottom:32px">Post jobs, define skill requirements, and shortlist candidates</div>
+    <div class="recruiter-grid">
+      <div>
+        <div class="section-heading">Post a New Job</div>
+        <div class="form-group"><label>Job Title</label><input type="text" id="jobTitle" placeholder="Full Stack Developer"></div>
+        <div class="form-group"><label>Company</label><input type="text" id="jobCompany" placeholder="Company name"></div>
+        <div class="form-group">
+          <label>Location</label>
+          <select id="jobLocation">
+            <option>Hyderabad, Telangana</option>
+            <option>Bangalore, Karnataka</option>
+            <option>Mumbai, Maharashtra</option>
+            <option>Remote</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Job Type</label>
+          <select id="jobType">
+            <option>Full-Time</option>
+            <option>Part-Time</option>
+            <option>Contract</option>
+            <option>Internship</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Required Skills (comma separated)</label><input type="text" id="jobSkills" placeholder="Java, Spring Boot, SQL, React"></div>
+        <div class="form-group"><label>Job Description</label><textarea id="jobDesc" placeholder="Describe the role and responsibilities..."></textarea></div>
+        <button class="submit-btn purple" onclick="postJob()">Post Job →</button>
+      </div>
+      <div>
+        <div class="section-heading">My Posted Jobs</div>
+        <div class="posted-jobs" id="postedJobs"></div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="section-heading">Candidate Shortlisting</div>
+    <p class="text-muted" style="margin-bottom:16px">All applicants sorted by skill match percentage</p>
+    <table class="candidates-table">
+      <thead>
+        <tr><th>Candidate</th><th>Applied For</th><th>Skills</th><th>Match</th><th>Action</th></tr>
+      </thead>
+      <tbody id="candidatesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div class="page" id="admin">
+  <div class="section" style="max-width:1000px">
+    <div class="form-title">Admin Dashboard</div>
+    <div class="form-sub" style="margin-bottom:28px">Platform overview and management tools</div>
+    <div class="admin-grid">
+      <div class="admin-stat"><div class="admin-stat-val cyan" id="totalUsers">0</div><div class="admin-stat-label">Total Users</div></div>
+      <div class="admin-stat"><div class="admin-stat-val purple" id="totalJobs">0</div><div class="admin-stat-label">Active Jobs</div></div>
+      <div class="admin-stat"><div class="admin-stat-val gold" id="pendingVerify">3</div><div class="admin-stat-label">Pending Verification</div></div>
+      <div class="admin-stat"><div class="admin-stat-val green">98.2%</div><div class="admin-stat-label">System Uptime</div></div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('users',this)">👤 Users</button>
+      <button class="admin-tab" onclick="switchAdminTab('jobs',this)">💼 Job Postings</button>
+      <button class="admin-tab" onclick="switchAdminTab('integrity',this)">🛡️ System Integrity</button>
+    </div>
+    <div id="tabUsers">
+      <table class="users-table">
+        <thead><tr><th>Name</th><th>Role</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="adminUsersBody"></tbody>
+      </table>
+    </div>
+    <div id="tabJobs" style="display:none">
+      <table class="users-table">
+        <thead><tr><th>Job Title</th><th>Company</th><th>Posted By</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="adminJobsBody"></tbody>
+      </table>
+    </div>
+    <div id="tabIntegrity" style="display:none">
+      <div class="cards">
+        <div class="card"><div class="card-icon" style="background:rgba(0,230,118,0.1)">✅</div><h3>Data Validation</h3><p>All 12,400 job postings validated. No malformed entries detected in the last scan.</p></div>
+        <div class="card"><div class="card-icon" style="background:rgba(0,229,255,0.1)">🔒</div><h3>Authentication</h3><p>98,000+ user sessions monitored. Zero unauthorized access attempts in 24 hours.</p></div>
+        <div class="card"><div class="card-icon" style="background:rgba(123,47,255,0.1)">📦</div><h3>Backup Status</h3><p>Last successful backup: 2 hours ago. All user data and job listings are secured.</p></div>
+        <div class="card"><div class="card-icon" style="background:rgba(255,209,102,0.1)">⚡</div><h3>Performance</h3><p>Average response time: 142ms. System load: 34%. All modules operating normally.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentRole = 'seeker';
+let userSkills = ['Java', 'Spring Boot', 'MySQL', 'HTML', 'CSS'];
+let postedJobsList = [];
+let adminUsers = [
+  { name:'Ravi Kumar', role:'Job Seeker', email:'ravi@example.com', status:'active' },
+  { name:'Priya Mehta', role:'Job Seeker', email:'priya@example.com', status:'active' },
+  { name:'Infosys HR', role:'Recruiter', email:'hr@infosys.com', status:'active' },
+  { name:'TCS Talent', role:'Recruiter', email:'talent@tcs.com', status:'pending' },
+  { name:'Kavya Singh', role:'Job Seeker', email:'kavya@example.com', status:'pending' },
+  { name:'Spam User', role:'Job Seeker', email:'spam@bot.com', status:'blocked' },
+];
+let adminJobs = [
+  { title:'Java Backend Developer', company:'Infosys', poster:'Infosys HR', status:'active' },
+  { title:'React Frontend Dev', company:'TCS', poster:'TCS Talent', status:'pending' },
+  { title:'Data Analyst', company:'Wipro', poster:'Wipro HR', status:'active' },
+  { title:'DevOps Engineer', company:'HCL', poster:'HCL Recruit', status:'pending' },
+];
+const jobsData = [
+  { id:1, title:'Java Backend Developer', company:'Infosys', location:'Hyderabad', type:'Full-Time', icon:'🏢', required:['Java','Spring Boot','MySQL','Hibernate','REST API'] },
+  { id:2, title:'React Frontend Developer', company:'TCS', location:'Bangalore', type:'Full-Time', icon:'💻', required:['React','JavaScript','HTML','CSS','Redux'] },
+  { id:3, title:'Full Stack Developer', company:'Wipro', location:'Pune', type:'Full-Time', icon:'🌐', required:['Java','React','MySQL','HTML','CSS','Git'] },
+  { id:4, title:'Data Analyst', company:'HCL', location:'Chennai', type:'Contract', icon:'📊', required:['Python','SQL','Excel','Tableau','Statistics'] },
+  { id:5, title:'DevOps Engineer', company:'Tech Mahindra', location:'Remote', type:'Full-Time', icon:'⚙️', required:['Docker','Jenkins','Linux','AWS','Kubernetes'] },
+  { id:6, title:'Android Developer', company:'Zoho', location:'Chennai', type:'Full-Time', icon:'📱', required:['Kotlin','Android SDK','Java','Firebase','REST API'] },
+];
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const btns = [...document.querySelectorAll('.nav-btn')];
+  btns.find(b => b.getAttribute('onclick')?.includes(id))?.classList.add('active');
+  if(id==='seeker') renderJobs();
+  if(id==='recruiter') renderRecruiter();
+  if(id==='admin') renderAdmin();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function selectRole(role) {
+  currentRole = role;
+  ['seeker','recruiter','admin'].forEach(r => {
+    document.getElementById('role'+r.charAt(0).toUpperCase()+r.slice(1)).classList.remove('selected');
+  });
+  document.getElementById('role'+role.charAt(0).toUpperCase()+role.slice(1)).classList.add('selected');
+  document.getElementById('companyField').style.display = role==='recruiter' ? 'block' : 'none';
+}
+
+function handleRegister() {
+  const f = document.getElementById('regFirst').value;
+  const e = document.getElementById('regEmail').value;
+  if(!f || !e) { toast('Please fill in all required fields'); return; }
+  adminUsers.push({ name: f+' '+(document.getElementById('regLast').value||''), role: currentRole==='seeker'?'Job Seeker':currentRole==='recruiter'?'Recruiter':'Admin', email: e, status:'pending' });
+  toast('Account created! Welcome to SkillBridge 🎉');
+  setTimeout(() => showPage(currentRole==='admin'?'admin': currentRole), 800);
+}
+
+function renderSkillTags() {
+  const container = document.getElementById('skillTags');
+  if(!container) return;
+  container.innerHTML = userSkills.map((s,i) =>
+    `<span class="skill-tag">${s}<button onclick="removeSkill(${i})">×</button></span>`
+  ).join('');
+}
+function addSkill() {
+  const inp = document.getElementById('skillInput');
+  const val = inp.value.trim();
+  if(val && !userSkills.includes(val)) { userSkills.push(val); renderSkillTags(); }
+  inp.value = '';
+}
+function removeSkill(i) { userSkills.splice(i,1); renderSkillTags(); }
+
+function calcMatch(required) {
+  const myLower = userSkills.map(s => s.toLowerCase());
+  const matched = required.filter(r => myLower.includes(r.toLowerCase()));
+  return Math.round((matched.length / required.length) * 100);
+}
+
+function renderJobs(filter='') {
+  renderSkillTags();
+  const list = document.getElementById('jobList');
+  const filtered = jobsData.filter(j =>
+    !filter || j.title.toLowerCase().includes(filter.toLowerCase()) ||
+    j.company.toLowerCase().includes(filter.toLowerCase()) ||
+    j.required.some(s => s.toLowerCase().includes(filter.toLowerCase()))
+  );
+  list.innerHTML = filtered.map(j => {
+    const pct = calcMatch(j.required);
+    const cls = pct>=70?'match-high':pct>=40?'match-mid':'match-low';
+    const label = pct>=70?'🟢 High Match':pct>=40?'🟡 Medium Match':'🔴 Low Match';
+    return `<div class="job-card" onclick="analyzeJob(${j.id})">
+      <div class="company-logo">${j.icon}</div>
+      <div class="job-info">
+        <div class="job-title">${j.title}</div>
+        <div class="job-meta">${j.company} &bull; ${j.location} &bull; ${j.type}</div>
+        <div class="job-skills">${j.required.map(s=>`<span class="job-skill-tag">${s}</span>`).join('')}</div>
+      </div>
+      <span class="match-badge ${cls}">${label} ${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function filterJobs() { renderJobs(document.getElementById('jobSearch').value); }
+
+function analyzeJob(id) {
+  const job = jobsData.find(j => j.id===id);
+  const pct = calcMatch(job.required);
+  const panel = document.getElementById('analysisPanel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'start' });
+  document.getElementById('jobBeingAnalyzed').textContent = job.title + ' @ ' + job.company;
+  document.getElementById('scoreNum').textContent = pct+'%';
+  const chanceLabel = document.getElementById('chanceLabel');
+  const chanceDesc = document.getElementById('chanceDesc');
+  if(pct>=70) {
+    chanceLabel.textContent = '🟢 High Chance'; chanceLabel.className = 'chance-label high';
+    chanceDesc.textContent = 'You are a strong candidate! Apply with confidence.';
+  } else if(pct>=40) {
+    chanceLabel.textContent = '🟡 Medium Chance'; chanceLabel.className = 'chance-label mid';
+    chanceDesc.textContent = 'You meet several requirements. Bridge the skill gaps to stand out.';
+  } else {
+    chanceLabel.textContent = '🔴 Low Chance'; chanceLabel.className = 'chance-label low';
+    chanceDesc.textContent = 'Significant gaps detected. Use the suggestions below to upskill.';
+  }
+  const offset = 264 - (264 * pct / 100);
+  const circle = document.getElementById('scoreCircle');
+  circle.style.strokeDashoffset = 264;
+  circle.style.stroke = pct>=70?'var(--high)':pct>=40?'var(--mid)':'var(--low)';
+  setTimeout(() => circle.style.strokeDashoffset = offset, 100);
+  const myLower = userSkills.map(s => s.toLowerCase());
+  const breakdown = document.getElementById('skillBreakdown');
+  breakdown.innerHTML = '<div style="font-family:\'Syne\',sans-serif;font-weight:700;margin-bottom:12px">Skill-by-Skill Breakdown</div>' +
+    job.required.map(s => {
+      const has = myLower.includes(s.toLowerCase());
+      const color = has ? 'var(--high)' : 'var(--low)';
+      const fillPct = has ? 100 : 0;
+      return `<div class="skill-row">
+        <div class="skill-row-label">${s}</div>
+        <div class="skill-bar"><div class="skill-bar-fill" style="width:0%;background:${color}" data-w="${fillPct}%"></div></div>
+        <div class="skill-row-pct" style="color:${color}">${has?'✓':'✗'}</div>
+      </div>`;
+    }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.skill-bar-fill').forEach(el => el.style.width = el.dataset.w);
+  }, 150);
+  const missing = job.required.filter(s => !myLower.includes(s.toLowerCase()));
+  const gapDiv = document.getElementById('gapSuggestions');
+  if(missing.length) {
+    gapDiv.innerHTML = '<div style="font-family:\'Syne\',sans-serif;font-weight:700;margin-bottom:12px;color:var(--accent3)">⚡ Skill Gap Suggestions</div>' +
+      missing.map(s => `<div class="gap-item"><span>📌</span> Learn <strong>${s}</strong> — Search for courses on Coursera, Udemy, or YouTube</div>`).join('');
+  } else {
+    gapDiv.innerHTML = '<div class="gap-item" style="background:rgba(0,230,118,0.07);border-color:rgba(0,230,118,0.2)"><span style="color:var(--high)">🎉</span> You have ALL the required skills for this job! Perfect match.</div>';
+  }
+}
+
+function renderRecruiter() { renderPostedJobs(); renderCandidates(); }
+
+function postJob() {
+  const title = document.getElementById('jobTitle').value;
+  const company = document.getElementById('jobCompany').value;
+  if(!title||!company) { toast('Please fill in Job Title and Company'); return; }
+  const skills = document.getElementById('jobSkills').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const newJob = {
+    id: 100+postedJobsList.length, title, company, icon:'🏷️',
+    location: document.getElementById('jobLocation').value,
+    type: document.getElementById('jobType').value,
+    required: skills.length ? skills : ['Communication','Teamwork']
+  };
+  postedJobsList.push(newJob);
+  jobsData.push(newJob);
+  adminJobs.push({ title, company, poster: company+' HR', status:'pending' });
+  ['jobTitle','jobCompany','jobSkills','jobDesc'].forEach(id => document.getElementById(id).value='');
+  renderPostedJobs(); renderCandidates();
+  toast('Job posted successfully! ✅');
+}
+
+function renderPostedJobs() {
+  const container = document.getElementById('postedJobs');
+  const allJobs = [...jobsData.slice(0,3), ...postedJobsList];
+  container.innerHTML = allJobs.slice(0,6).map(j => `
+    <div class="posted-job">
+      <div>
+        <div class="posted-job-title">${j.title}</div>
+        <div class="posted-job-meta">${j.company} &bull; ${j.location||'—'}</div>
+      </div>
+      <button class="applicants-btn">View Applicants</button>
+    </div>`).join('') || '<div class="text-muted">No jobs posted yet</div>';
+}
+
+function renderCandidates() {
+  const candidates = [
+    { name:'Ravi Kumar', job:'Java Backend Developer', skills:['Java','Spring Boot','MySQL'], match:80 },
+    { name:'Priya Mehta', job:'React Frontend Developer', skills:['React','HTML','CSS'], match:60 },
+    { name:'Amit Patel', job:'Full Stack Developer', skills:['Java','MySQL','HTML'], match:50 },
+    { name:'Kavya Singh', job:'Data Analyst', skills:['SQL','Excel'], match:40 },
+    { name:'Deepak Rao', job:'DevOps Engineer', skills:['Docker','Linux'], match:40 },
+  ];
+  const tbody = document.getElementById('candidatesBody');
+  tbody.innerHTML = candidates.map((c,i) => {
+    const cls = c.match>=70?'match-high':c.match>=40?'match-mid':'match-low';
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="color:var(--muted)">${c.job}</td>
+      <td>${c.skills.map(s=>`<span class="job-skill-tag">${s}</span>`).join(' ')}</td>
+      <td><span class="match-badge ${cls}">${c.match}%</span></td>
+      <td><button class="shortlist-btn" id="sl${i}" onclick="toggleShortlist(${i})">Shortlist</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleShortlist(i) {
+  const btn = document.getElementById('sl'+i);
+  btn.classList.toggle('active');
+  btn.textContent = btn.classList.contains('active') ? '✓ Shortlisted' : 'Shortlist';
+  if(btn.classList.contains('active')) toast('Candidate shortlisted! ✅');
+}
+
+function renderAdmin() {
+  document.getElementById('totalUsers').textContent = adminUsers.length;
+  document.getElementById('totalJobs').textContent = jobsData.length + postedJobsList.length;
+  renderAdminUsers(); renderAdminJobs();
+}
+
+function renderAdminUsers() {
+  const tbody = document.getElementById('adminUsersBody');
+  tbody.innerHTML = adminUsers.map((u,i) => `<tr>
+    <td><strong>${u.name}</strong></td>
+    <td style="color:var(--muted)">${u.role}</td>
+    <td style="color:var(--muted)">${u.email}</td>
+    <td><span class="status-pill status-${u.status}">${u.status.charAt(0).toUpperCase()+u.status.slice(1)}</span></td>
+    <td><div class="action-btns">
+      <button class="act-btn act-approve" onclick="adminAction(${i},'active')">Approve</button>
+      <button class="act-btn act-block" onclick="adminAction(${i},'blocked')">Block</button>
+      <button class="act-btn act-delete" onclick="adminDelete(${i})">Delete</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function renderAdminJobs() {
+  const tbody = document.getElementById('adminJobsBody');
+  tbody.innerHTML = adminJobs.map((j,i) => `<tr>
+    <td><strong>${j.title}</strong></td>
+    <td style="color:var(--muted)">${j.company}</td>
+    <td style="color:var(--muted)">${j.poster}</td>
+    <td><span class="status-pill ${j.status==='active'?'status-active':'status-pending'}">${j.status.charAt(0).toUpperCase()+j.status.slice(1)}</span></td>
+    <td><div class="action-btns">
+      <button class="act-btn act-approve" onclick="verifyJob(${i})">Verify</button>
+      <button class="act-btn act-delete" onclick="removeJob(${i})">Remove</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function adminAction(i, status) {
+  adminUsers[i].status = status;
+  renderAdminUsers();
+  toast(status==='active' ? 'User approved ✅' : 'User blocked 🚫');
+}
+function adminDelete(i) {
+  adminUsers.splice(i,1);
+  document.getElementById('totalUsers').textContent = adminUsers.length;
+  renderAdminUsers();
+  toast('User deleted');
+}
+function verifyJob(i) {
+  adminJobs[i].status = 'active';
+  renderAdminJobs();
+  toast('Job verified and published ✅');
+}
+function removeJob(i) {
+  adminJobs.splice(i,1);
+  renderAdminJobs();
+  toast('Job removed');
+}
+
+function switchAdminTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['Users','Jobs','Integrity'].forEach(t => document.getElementById('tab'+t).style.display='none');
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).style.display='block';
+}
+
+renderSkillTags();
+renderJobs();
+</script>
+</body>
+</html>
